@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WH25 Production — MachineOps</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="login-logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 18 18" fill="none">
+                    <rect x="2" y="2" width="6" height="6" rx="1.5" fill="#22d3a0"/>
+                    <rect x="10" y="2" width="6" height="6" rx="1.5" fill="#22d3a0" opacity=".5"/>
+                    <rect x="2" y="10" width="6" height="6" rx="1.5" fill="#22d3a0" opacity=".5"/>
+                    <rect x="10" y="10" width="6" height="6" rx="1.5" fill="#22d3a0" opacity=".3"/>
+                </svg>
+            </div>
+            <div><div class="brand">MIRACLE COMPANY MACHINE PRODUCTION</div><small>Warehouse 25 · Production</small></div>
+        </div>
+        <h1>Sign in</h1>
+        <p>Select an account or enter credentials manually.</p>
+        <div class="sec-lbl" style="margin-top:0">Quick sign-in</div>
+        <div class="quick-pills" id="user-pills"></div>
+        <div class="form-group"><label>Username</label><input id="l-user" type="text" placeholder="username"></div>
+        <div class="form-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••"></div>
+        <button class="login-btn" onclick="doLogin()">Sign in</button>
+        <div class="login-err hidden" id="l-err">Invalid username or password.</div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" class="hidden">
+    <div class="topbar">
+        <div class="topbar-logo"><div class="logo-dot"></div>WH25 MachineOps</div>
+        <button class="nav-btn active" id="nb-tester" onclick="showView('tester')">Operator</button>
+        <button class="nav-btn hidden" id="nb-admin" onclick="showView('admin')">Admin</button>
+        <button class="nav-btn" id="nb-display" onclick="showView('display')">Display</button>
+        <span class="role-badge" id="role-badge"></span>
+        <span style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace" id="topbar-user"></span>
+        <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+
+    <div class="content">
+        <!-- OPERATOR VIEW -->
+        <div id="view-tester">
+            <div class="mach-row">
+                <label>Machine:</label>
+                <select id="mach-sel" onchange="loadMachine()"></select>
+                <span class="sdot" id="mach-sdot"></span>
+                <span class="mach-status" id="mach-stxt"></span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span id="mach-title">—</span>
+                    <span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-left:auto" id="mach-last"></span>
+                </div>
+
+                <div class="metric-grid" id="tester-metrics"></div>
+
+                <div class="sec-lbl" style="margin-top:1rem">Log today's production run</div>
+                <div class="input-grid">
+                    <div><label>WIP Code</label><input type="text" id="i-wip" placeholder="e.g. 03PVCU0070135R"></div>
+                    <div><label>Description</label><input type="text" id="i-desc" placeholder="e.g. 10 MM - SC PVC (RED)"></div>
+                    <div><label>Planned length (m)</label><input type="number" id="i-plan" min="0" placeholder="0"></div>
+                    <div><label>Duration (hrs)</label><input type="number" id="i-dur" min="0" step="0.5" placeholder="0"></div>
+                    <div><label>Actual length (m)</label><input type="number" id="i-actual" min="0" placeholder="0"></div>
+                    <div><label>Shift (D / N / D&N)</label>
+                        <select id="i-shift"><option value="D">D — Day</option><option value="N">N — Night</option><option value="D&N">D&amp;N — Both</option></select>
+                    </div>
+                    <div style="grid-column:1/-1"><label>Milestone / Notes</label><input type="text" id="i-notes" placeholder="e.g. Sparked at 150m, blue core ran out..."></div>
+                </div>
+                <button class="save-btn" onclick="saveEntry()">Save entry</button>
+                <span class="ok-msg hidden" id="save-ok">✓ Saved</span>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Production trend — last 8 runs</div>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px" id="trend-legend"></div>
+                <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Daily production log</div>
+                <div id="tester-log"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Assigned operators</div>
+                <div id="tester-emps"></div>
+            </div>
+        </div>
+
+        <!-- ADMIN VIEW -->
+        <div id="view-admin" class="hidden">
+            <div class="two-col">
+                <div class="stat-card"><div class="stat-label">Machines active</div><div class="stat-val" id="adm-active">—</div></div>
+                <div class="stat-card"><div class="stat-label">Operators on record</div><div class="stat-val" id="adm-staff">—</div></div>
+            </div>
+            <div class="card">
+                <div class="card-title">All machines — today's status</div>
+                <div id="fleet-list"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Fleet performance — 5 fields average</div>
+                <div id="fleet-avg"></div>
+                <div class="chart-wrap" style="height:180px;margin-top:1rem"><canvas id="fleet-chart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">All operators</div>
+                <div id="all-emps"></div>
+            </div>
+        </div>
+
+        <!-- DISPLAY VIEW -->
+        <div id="view-display" class="hidden">
+            <div class="dscreen">
+                <div class="dscreen-header">
+                    <h2>Today's production schedule</h2>
+                    <span class="dscreen-date" id="d-date-title"></span>
+                </div>
+                <div id="d-tasks"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Add run to schedule</div>
+                <div class="input-grid">
+                    <div><label>Time</label><input type="time" id="t-time" value="07:00"></div>
+                    <div><label>Machine</label>
+                        <select id="t-mach" style="width:100%;height:34px;font-size:13px;padding:0 10px"></select>
+                    </div>
+                    <div><label>Shift</label>
+                        <select id="t-shift" style="width:100%;height:34px;font-size:13px;padding:0 10px">
+                            <option value="D">D — Day</option><option value="N">N — Night</option><option value="D&N">D&N — Both</option>
+                        </select>
+                    </div>
+                    <div><label>WIP Code</label><input type="text" id="t-wip" placeholder="e.g. 0604-XLCU0070170"></div>
+                    <div style="grid-column:1/-1"><label>Description</label><input type="text" id="t-desc" placeholder="e.g. 16 MM - 4C (ARMOURING)"></div>
+                </div>
+                <button class="save-btn" onclick="addTask()">Add to schedule</button>
+                <span class="ok-msg hidden" id="task-ok">✓ Added</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
