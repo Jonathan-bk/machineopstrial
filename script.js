@@ -1,14 +1,9 @@
-/* ── DATA: Real WH25 machines and operators ── */
+/* ── DATA: Real WH25 machines and supervisors ── */
 const USERS = [
     {name:'Admin (WH25)',username:'admin',password:'admin123',role:'admin'},
-    {name:'Dennis Nyamagera',username:'dennis',password:'op123',role:'tester',machines:['MCH-408'],initials:'DN',color:'av-g'},
-    {name:'Bernasius Matui',username:'bernasius',password:'op123',role:'tester',machines:['MCH-408'],initials:'BM',color:'av-b'},
-    {name:'Stanley Esilaba',username:'stanley',password:'op123',role:'tester',machines:['MCH-409'],initials:'SE',color:'av-p'},
-    {name:'Daniel Imbaya',username:'daniel',password:'op123',role:'tester',machines:['MCH-409'],initials:'DI',color:'av-a'},
-    {name:'Shallow Edaria',username:'shallow',password:'op123',role:'tester',machines:['MCH-409'],initials:'SH',color:'av-p'},
-    {name:'Oscar Muthoka',username:'oscar',password:'op123',role:'tester',machines:['MCH-444'],initials:'OM',color:'av-g'},
-    {name:'Evanson Okioma',username:'evanson',password:'op123',role:'tester',machines:['MCH-444'],initials:'EO',color:'av-b'},
-    {name:'Paul Kata',username:'paul',password:'op123',role:'tester',machines:['MCH-408'],initials:'PK',color:'av-a'},
+    {name:'Justus Magata',username:'justus',password:'sup123',role:'supervisor',machines:['MCH-444','MCH-409','MCH-408'],initials:'JM',color:'av-p'},
+    {name:'Samson Onyimbo',username:'samson',password:'sup123',role:'supervisor',machines:['MCH-444','MCH-409','MCH-408'],initials:'SO',color:'av-b'},
+    {name:'Daniel Musango',username:'dmusango',password:'sup123',role:'supervisor',machines:['MCH-444','MCH-409','MCH-408'],initials:'DM',color:'av-a'},
 ];
 
 const MACHINES = [
@@ -88,6 +83,9 @@ function setupForRole(){
     if(currentUser.role==='admin'){
         badge.textContent='admin';badge.className='role-badge rb-admin';
         adminBtn.classList.remove('hidden');showView('admin');
+    } else if(currentUser.role==='supervisor'){
+        badge.textContent='supervisor';badge.className='role-badge rb-tester';
+        adminBtn.classList.remove('hidden');showView('tester');
     } else {
         badge.textContent='operator';badge.className='role-badge rb-tester';
         adminBtn.classList.add('hidden');showView('tester');
@@ -110,7 +108,7 @@ function showView(v){
 function populateMachSel(){
     const sel=document.getElementById('mach-sel');
     sel.innerHTML='';
-    const machines=currentUser.role==='admin'?MACHINES:MACHINES.filter(m=>currentUser.machines&&currentUser.machines.includes(m.id));
+    const machines=(currentUser.role==='admin'||currentUser.role==='supervisor')?MACHINES:MACHINES.filter(m=>currentUser.machines&&currentUser.machines.includes(m.id));
     machines.forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.name+' — '+m.desc;sel.appendChild(o);});
 }
 function populateTaskMachSel(){
@@ -119,7 +117,7 @@ function populateTaskMachSel(){
     MACHINES.forEach(m=>{const o=document.createElement('option');o.value=m.name+' ('+m.desc.split('/')[0].trim().slice(0,3).toUpperCase()+')';o.textContent=o.value;sel.appendChild(o);});
 }
 
-/* ── TESTER / OPERATOR VIEW ── */
+/* ── SUPERVISOR VIEW ── */
 function getLatestEntry(mid){const logs=load('log_'+mid,[]);return logs.length?logs[logs.length-1]:null;}
 
 function calcEff(entry){
@@ -208,9 +206,13 @@ function renderLog(mid){
 }
 
 function renderTesterEmps(mid){
-    const emps=USERS.filter(u=>u.role==='tester'&&u.machines&&u.machines.includes(mid));
+    const logs=load('log_'+mid,[]);
+    const usedNames=new Set();
+    logs.forEach(l=>{if(l.user&&l.user.trim()&&l.user!=='System')usedNames.add(l.user.trim().toLowerCase())});
+    const matched=USERS.filter(u=>usedNames.has(u.name.toLowerCase()));
     const el=document.getElementById('tester-emps');
-    el.innerHTML=emps.length?emps.map(e=>`<div class="emp-row"><div class="avatar ${e.color}">${e.initials}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.name}</div></div></div>`).join(''):'<div style="font-size:13px;color:var(--text3)">No operators assigned.</div>';
+    if(!matched.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">No operators recorded for this machine yet.</div>';return;}
+    el.innerHTML=matched.map(e=>`<div class="emp-row"><div class="avatar ${e.color}">${e.initials}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.name}</div></div></div>`).join('');
 }
 
 function saveEntry(){
@@ -221,17 +223,18 @@ function saveEntry(){
     const dur=parseFloat(document.getElementById('i-dur').value);
     const actual=parseFloat(document.getElementById('i-actual').value)||0;
     const shift=document.getElementById('i-shift').value;
+    const operator=document.getElementById('i-operator').value.trim(); // New operator field
     const notes=document.getElementById('i-notes').value.trim();
-    if(!wip||isNaN(plan)||isNaN(dur))return;
+    if(!wip||isNaN(plan)||isNaN(dur)||!operator) return; // Ensure operator is filled
     const pct=plan>0?Math.round((actual/plan)*1000)/10:0;
     const now=new Date();
     const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const date=months[now.getMonth()]+' '+now.getDate();
-    const entry={date,wip,desc,plan,dur,actual,pct,shift,notes,user:currentUser.name};
+    const entry={date,wip,desc,plan,dur,actual,pct,shift,notes,user:operator}; // Save operator as user
     const logs=load('log_'+mid,[]);
     logs.push(entry);
     save('log_'+mid,logs);
-    ['i-wip','i-desc','i-plan','i-dur','i-actual','i-notes'].forEach(id=>document.getElementById(id).value='');
+    ['i-wip','i-desc','i-plan','i-dur','i-actual','i-operator','i-notes'].forEach(id=>document.getElementById(id).value='');
     const ok=document.getElementById('save-ok');
     ok.classList.remove('hidden');
     setTimeout(()=>ok.classList.add('hidden'),2500);
@@ -241,9 +244,10 @@ function saveEntry(){
 /* ── ADMIN VIEW ── */
 function renderAdmin(){
     const active=MACHINES.filter(m=>m.status!=='err').length;
-    const ops=USERS.filter(u=>u.role==='tester').length;
+    const allOpsSet=new Set();
+    MACHINES.forEach(m=>{load('log_'+m.id,[]).forEach(l=>{if(l.user&&l.user!=='System')allOpsSet.add(l.user.trim());})});
     document.getElementById('adm-active').textContent=active+' / '+MACHINES.length;
-    document.getElementById('adm-staff').textContent=ops;
+    document.getElementById('adm-staff').textContent=allOpsSet.size||'—';
 
     // Fleet list
     document.getElementById('fleet-list').innerHTML=MACHINES.map(m=>{
@@ -279,10 +283,25 @@ function renderAdmin(){
         fleetChart=new Chart(fc,{type:'bar',data:{labels:['Planned','Duration','Actual','% Complete','Plan Eff.'],datasets:[{data:[avgPlan/50,avgDur,avgActual/50,avgPct,avgEff],backgroundColor:['#60a5fa','#a78bfa','#22d3a0','#f59e0b',avgEff>=90?'#22d3a0':avgEff>=60?'#f59e0b':'#f87171'],borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e2538',titleColor:'#8b90a0',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,callbacks:{label:ctx=>{const labels=['Planned (÷50)','Duration (hrs)','Actual (÷50)','% Completion','Plan Efficiency'];return labels[ctx.dataIndex]+': '+[avgPlan,avgDur,avgActual,avgPct,avgEff][ctx.dataIndex]+(ctx.dataIndex>=3?'%':'')}}}},scales:{x:{ticks:{font:{size:11},color:'#5a5f70'},grid:{display:false}},y:{ticks:{font:{size:11},color:'#5a5f70'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
     }
 
-    // All operators
-    document.getElementById('all-emps').innerHTML=USERS.filter(u=>u.role==='tester').map(e=>{
-        const mnames=(e.machines||[]).map(mid=>{const m=MACHINES.find(x=>x.id===mid);return m?m.name+' ('+m.desc+')':mid}).join(', ');
-        return `<div class="emp-row"><div class="avatar ${e.color}">${e.initials}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${e.name}</div><div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${mnames}</div></div><span class="on-shift">active</span></div>`;
+    // All operators — built from actual log entries across all machines
+    const opMachMap={};
+    MACHINES.forEach(m=>{
+        const logs=load('log_'+m.id,[]);
+        logs.forEach(l=>{
+            if(!l.user||l.user==='System')return;
+            const key=l.user.trim();
+            if(!opMachMap[key])opMachMap[key]=new Set();
+            opMachMap[key].add(m.name+' ('+m.desc+')');
+        });
+    });
+    const opEntries=Object.entries(opMachMap);
+    if(!opEntries.length){document.getElementById('all-emps').innerHTML='<div style="font-size:13px;color:var(--text3)">No operator log entries yet.</div>';return;}
+    document.getElementById('all-emps').innerHTML=opEntries.map(([name,machSet])=>{
+        const op=USERS.find(u=>name.toLowerCase().includes(u.name.toLowerCase().split(' ')[0])||u.name.toLowerCase().includes(name.toLowerCase().split(' ')[0]));
+        const ini=op?op.initials:(name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2));
+        const color=op?op.color:'av-g';
+        const machStr=Array.from(machSet).join(', ');
+        return `<div class="emp-row"><div class="avatar ${color}">${ini}</div><div style="flex:1"><div style="font-size:13px;font-weight:500">${name}</div><div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${machStr}</div></div></div>`;
     }).join('');
 }
 
@@ -331,7 +350,8 @@ function buildPills(){
     const el=document.getElementById('user-pills');
     USERS.forEach(u=>{
         const b=document.createElement('button');
-        b.className='pill';b.textContent=u.name.split(' ')[0]+' ('+u.role+')';
+        const label=u.role==='admin'?'admin':u.role==='supervisor'?'supervisor':'op';
+        b.className='pill';b.textContent=u.name.split(' ')[0]+' ('+label+')';
         b.onclick=()=>{document.getElementById('l-user').value=u.username;document.getElementById('l-pass').value=u.password;};
         el.appendChild(b);
     });
