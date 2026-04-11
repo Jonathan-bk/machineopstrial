@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WH25 Production — MachineOps</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
@@ -22,7 +22,7 @@
                     <rect x="10" y="10" width="6" height="6" rx="1.5" fill="#22d3a0" opacity=".3"/>
                 </svg>
             </div>
-            <div><div class="brand">METSEC CABLE LTD</div><small>Warehouse 25 · Production</small></div>
+            <div><div class="brand">WH25 MachineOps</div><small>Warehouse 25 · Production</small></div>
         </div>
         <h1>Sign in</h1>
         <p>Select an account or enter credentials manually.</p>
@@ -39,7 +39,7 @@
 <div id="main-app" class="hidden">
     <div class="topbar">
         <div class="topbar-logo"><div class="logo-dot"></div>WH25 MachineOps</div>
-        <button class="nav-btn active" id="nb-tester" onclick="showView('tester')">Operator</button>
+        <button class="nav-btn active" id="nb-tester" onclick="showView('tester')">Dashboard</button>
         <button class="nav-btn hidden" id="nb-admin" onclick="showView('admin')">Admin</button>
         <button class="nav-btn" id="nb-display" onclick="showView('display')">Display</button>
         <span class="role-badge" id="role-badge"></span>
@@ -48,6 +48,7 @@
     </div>
 
     <div class="content">
+
         <!-- OPERATOR VIEW -->
         <div id="view-tester">
             <div class="mach-row">
@@ -75,6 +76,7 @@
                     <div><label>Shift (D / N / D&N)</label>
                         <select id="i-shift"><option value="D">D — Day</option><option value="N">N — Night</option><option value="D&N">D&amp;N — Both</option></select>
                     </div>
+                    <div><label>Operator Name</label><input type="text" id="i-operator" placeholder="Enter operator's name"></div>
                     <div style="grid-column:1/-1"><label>Milestone / Notes</label><input type="text" id="i-notes" placeholder="e.g. Sparked at 150m, blue core ran out..."></div>
                 </div>
                 <button class="save-btn" onclick="saveEntry()">Save entry</button>
@@ -93,7 +95,7 @@
             </div>
 
             <div class="card">
-                <div class="card-title">Assigned operators</div>
+                <div class="card-title">Operators on this machine</div>
                 <div id="tester-emps"></div>
             </div>
         </div>
@@ -114,7 +116,7 @@
                 <div class="chart-wrap" style="height:180px;margin-top:1rem"><canvas id="fleet-chart"></canvas></div>
             </div>
             <div class="card">
-                <div class="card-title">All operators</div>
+                <div class="card-title">Operators — from log entries</div>
                 <div id="all-emps"></div>
             </div>
         </div>
@@ -147,6 +149,7 @@
                 <span class="ok-msg hidden" id="task-ok">✓ Added</span>
             </div>
         </div>
+
     </div>
 </div>
 
