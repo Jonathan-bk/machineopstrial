@@ -10,6 +10,18 @@ const MACHINES = [
     {id:'MCH-444',name:'Machine 444',desc:'Armouring',status:'ok'},
     {id:'MCH-409',name:'Machine 409',desc:'Layup / Twisting',status:'ok'},
     {id:'MCH-408',name:'Machine 408',desc:'Insulation / Extrusion',status:'ok'},
+    {id:'MCH-87',name:'Machine 87',desc:'Extrusion',status:'ok'},
+    {id:'MCH-88',name:'Machine 88',desc:'Extrusion',status:'ok'},
+    {id:'MCH-89',name:'Machine 89',desc:'Amouring',status:'ok'},
+    {id:'MCH-90',name:'Machine 90',desc:'Amouring',status:'ok'},
+    {id:'MCH-104',name:'Machine 104',desc:'Stranding',status:'ok'},
+    {id:'MCH-113',name:'Machine 113',desc:'Tubular',status:'ok'},
+    {id:'MCH-115',name:'Machine 115',desc:'Tubular',status:'ok'},
+    {id:'MCH-116',name:'Machine 116',desc:'Tubular',status:'ok'},
+    {id:'MCH-115',name:'Machine 155',desc:'Tubular',status:'ok'},
+    {id:'MCH-207',name:'Machine 207',desc:'Amouring',status:'ok'},
+    {id:'MCH-375',name:'Machine 375',desc:'Extrusion',status:'ok'},
+    {id:'MCH-492',name:'Machine 492',desc:'Stranding',status:'ok'},
 ];
 
 // 5 performance fields (from the spreadsheet columns)
