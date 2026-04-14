@@ -1,2 +1,2 @@
 # machineopstrial
-a data entry site for a company specifically  a single warehouse
+Trial data entry site for a company specifically  a single warehouse
