@@ -8,7 +8,7 @@ const USERS = [
 
 const MACHINES = [
     {id:'MCH-444',name:'Machine 444',desc:'Armouring',status:'ok'},
-    {id:'MCH-409',name:'Machine 409',desc:'Layup / Twisting',status:'ok'},
+    {id:'MCH-409',name:'Machine 409',desc:'Lay-up / Twisting',status:'ok'},
     {id:'MCH-408',name:'Machine 408',desc:'Insulation / Extrusion',status:'ok'},
     {id:'MCH-87',name:'Machine 87',desc:'Extrusion',status:'ok'},
     {id:'MCH-88',name:'Machine 88',desc:'Extrusion',status:'ok'},
@@ -20,6 +20,7 @@ const MACHINES = [
     {id:'MCH-116',name:'Machine 116',desc:'Tubular',status:'ok'},
     {id:'MCH-115',name:'Machine 155',desc:'Tubular',status:'ok'},
     {id:'MCH-207',name:'Machine 207',desc:'Amouring',status:'ok'},
+     {id:'MCH-360',name:'Machine 360',desc:'Lay-up / Twisting',status:'ok'},
     {id:'MCH-375',name:'Machine 375',desc:'Extrusion',status:'ok'},
     {id:'MCH-492',name:'Machine 492',desc:'Stranding',status:'ok'},
 ];
@@ -197,25 +198,38 @@ function renderTrendChart(mid){
 }
 
 function renderLog(mid){
-    const logs=load('log_'+mid,[]);
-    const el=document.getElementById('tester-log');
-    if(!logs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 0">No entries logged yet.</div>';return;}
-    el.innerHTML=logs.slice().reverse().slice(0,15).map(l=>{
-        const eff=l.plan?Math.round((l.actual/l.plan)*100)+'%':'—';
-        const c=l.pct>=90?'var(--green)':l.pct>=60?'var(--amber)':'var(--red)';
-        const notes=l.notes?`<span style="color:var(--text3)"> — ${l.notes}</span>`:'';
-        return `<div class="log-row">
-            <span class="log-date">${l.date}</span>
-            <div class="log-body">
-                <span style="color:var(--text)">${l.wip}</span> <span style="color:var(--text2)">${l.desc}</span>
-                &nbsp;·&nbsp;Plan: ${(l.plan||0).toLocaleString()}m
-                &nbsp;·&nbsp;Actual: ${(l.actual||0).toLocaleString()}m
-                &nbsp;·&nbsp;<span style="color:${c}">${l.pct||0}%</span>
-                &nbsp;·&nbsp;${l.dur}h [${l.shift}] <span style="color:var(--text3)">(${l.user})</span>${notes}
-            </div>
-        </div>`;
-    }).join('');
+  const logs = load('log_'+mid,[]);
+  const el = document.getElementById('tester-log');
+  if(!logs.length){
+    el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:8px 0">No entries logged yet.</div>';
+    return;
+  }
+
+  // Show newest first, but we need the original index when deleting.
+  const rev = logs.slice().reverse().slice(0,15);
+  el.innerHTML = rev.map((l, revIdx) => {
+    // compute original index in logs array
+    const origIdx = logs.length - 1 - revIdx;
+    const eff = l.plan ? Math.round((l.actual / l.plan) * 100) + '%' : '—';
+    const c = l.pct >= 90 ? 'var(--green)' : l.pct >= 60 ? 'var(--amber)' : 'var(--red)';
+    const notes = l.notes ? `<span style="color:var(--text3)"> — ${l.notes}</span>` : '';
+    // small delete button on the right
+    return `<div class="log-row" id="log-${mid}-${origIdx}">
+      <span class="log-date">${l.date}</span>
+      <div class="log-body">
+        <span style="color:var(--text)">${l.wip}</span> <span style="color:var(--text2)">${l.desc}</span>
+        &nbsp;·&nbsp;Plan: ${(l.plan||0).toLocaleString()}m
+        &nbsp;·&nbsp;Actual: ${(l.actual||0).toLocaleString()}m
+        &nbsp;·&nbsp;<span style="color:${c}">${l.pct||0}%</span>
+        &nbsp;·&nbsp;${l.dur}h [${l.shift}] <span style="color:var(--text3)">(${l.user})</span>${notes}
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <button class="pill" style="font-size:11px;padding:4px 8px;background:transparent;border:0.5px solid rgba(255,255,255,0.06);color:var(--text2)" onclick="deleteEntry('${mid}', ${origIdx})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
 }
+
 
 function renderTesterEmps(mid){
     const logs=load('log_'+mid,[]);
@@ -368,5 +382,26 @@ function buildPills(){
         el.appendChild(b);
     });
 }
+
+function deleteEntry(mid, idx){
+  if(!confirm('Delete this production entry? This cannot be undone.')) return;
+  const key = 'log_'+mid;
+  const logs = load(key, []);
+  if(idx < 0 || idx >= logs.length) return;
+  logs.splice(idx, 1);
+  save(key, logs);
+  // If the log currently shown is the same machine, reload view to refresh metrics, chart and lists
+  const currentMid = document.getElementById('mach-sel') ? document.getElementById('mach-sel').value : null;
+  if(currentMid === mid){
+    loadMachine();
+  } else {
+    // If not viewing that machine, just re-render admin/display if needed
+    if(!document.getElementById('view-tester').classList.contains('hidden')) {
+      // reload selected machine view quietly
+      loadMachine();
+    }
+  }
+}
+
 
 initSeeds();buildPills();
